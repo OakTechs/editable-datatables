@@ -204,15 +204,32 @@
             if (currentEditMode !== 'inline') return;
             var cell = table.cell(this);
             var originalData = cell.data();
+            var rowData = table.row(cell.index().row).data();
+            var columnIdx = cell.index().column;
+            var columnName = table.settings().init().columns[columnIdx].data;
             var input = $('<input type="text" class="form-control" value="' + originalData + '"/>');
             $(this).html(input);
             input.focus();
+
             input.blur(function() {
-                cell.data(this.value).draw();
+                var newValue = this.value;
+                var postData = {
+                    id: rowData.id
+                };
+                postData[columnName] = newValue;
+
+                $.post('data.php', postData, function(response) {
+                    if (response.success) {
+                        cell.data(newValue).draw();
+                    } else {
+                        cell.data(originalData).draw();
+                    }
+                }, 'json');
             });
+
             input.keypress(function(e) {
                 if (e.which == 13) { // Enter key
-                    cell.data(this.value).draw();
+                    input.blur();
                 }
             });
         });

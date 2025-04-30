@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($column != 'id') {
                 $safe_column = $mysqli->real_escape_string($column);
                 $safe_value = $mysqli->real_escape_string($value);
-                $mysqli->query("UPDATE employees SET $safe_column='$safe_value' WHERE id=$id");
+                $mysqli->query("UPDATE employees SET `$safe_column` = '$safe_value' WHERE id = $id");
             }
         }
     }
