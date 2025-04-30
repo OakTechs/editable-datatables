@@ -98,14 +98,12 @@
 
     <script>
     $(document).ready(function() {
-        var yourDataArray = [
-            { first_name: "Tiger", last_name: "Nixon", position: "System Architect", office: "Edinburgh", start_date: "2011-04-25", salary: "$320,800" },
-            { first_name: "Garrett", last_name: "Winters", position: "Accountant", office: "Tokyo", start_date: "2011-07-25", salary: "$170,750" },
-            { first_name: "Ashton", last_name: "Cox", position: "Junior Technical Author", office: "San Francisco", start_date: "2009-01-12", salary: "$86,000" }
-        ];
-
         var table = $('#example').DataTable({
-            data: yourDataArray,
+            ajax: {
+              url: 'data.php',
+              type: 'GET',
+              dataSrc: 'data'
+          },
             columns: [
                 { data: 'first_name' },
                 { data: 'last_name' },
@@ -139,14 +137,22 @@
 
         $('#saveBtn').click(function() {
             var idx = $('#rowIndex').val();
-            table.row(idx).data({
+            var rowData = {
+                id: table.row(idx).data().id,
                 first_name: $('#firstName').val(),
                 last_name: $('#lastName').val(),
                 position: $('#position').val(),
                 office: $('#office').val(),
                 start_date: $('#startDate').val(),
                 salary: $('#salary').val()
-            }).draw();
+            };
+
+            $.post('data.php', rowData, function(response) {
+                if (response.success) {
+                    table.ajax.reload(null, false);
+                }
+            }, 'json');
+
             var editModal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
             editModal.hide();
         });
