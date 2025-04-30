@@ -36,6 +36,7 @@
     <table id="example" class="display nowrap" style="width:100%">
         <thead>
             <tr>
+                <th> Id </th>
                 <th>First name</th>
                 <th>Last name</th>
                 <th>Position</th>
@@ -105,6 +106,7 @@
               dataSrc: 'data'
           },
             columns: [
+                { data: 'id' },
                 { data: 'first_name' },
                 { data: 'last_name' },
                 { data: 'position' },
@@ -165,15 +167,31 @@
             $('#bubbleEditor').css({
                 top: e.pageY + 10,
                 left: e.pageX + 10
-            }).show().data('cell', cell);
+            }).show().data('cell', cell).data('column', cell.index().column);
             e.stopPropagation();
         });
 
         $('#bubbleSaveBtn').click(function() {
-            var cell = $('#bubbleEditor').data('cell');
-            cell.data($('#bubbleInput').val()).draw();
-            $('#bubbleEditor').hide();
-        });
+          var cell = $('#bubbleEditor').data('cell');
+          var rowData = table.row(cell.index().row).data();
+          var columnIdx = cell.index().column;
+          var columnName = table.settings().init().columns[columnIdx].data;
+          var newValue = $('#bubbleInput').val();
+          console.log("row data id is: ", rowData.id);
+          var postData = {
+              id: rowData.id
+          };
+          postData[columnName] = newValue;
+
+          $.post('data.php', postData, function(response) {
+              if (response.success) {
+                  table.ajax.reload(null, false);
+              }
+          }, 'json');
+
+          $('#bubbleEditor').hide();
+      });
+
 
         $(document).click(function(e) {
             if (!$(e.target).closest('#bubbleEditor').length) {
