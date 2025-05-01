@@ -11,6 +11,10 @@
     <!-- Bootstrap CSS + JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery UI CSS + JS -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
     <style>
         #bubbleEditor {
             display: none;
@@ -76,7 +80,7 @@
               </div>
               <div class="mb-3">
                 <label>Start date</label>
-                <input type="text" class="form-control" id="startDate">
+                <input type="date" class="form-control" id="startDate">
               </div>
               <div class="mb-3">
                 <label>Salary</label>
@@ -163,11 +167,25 @@
         $('#example tbody').on('click', 'td', function(e) {
             if (currentEditMode !== 'bubble') return;
             var cell = table.cell(this);
+            var columnIdx = cell.index().column;
+            var columnName = table.settings().init().columns[columnIdx].data;
             $('#bubbleInput').val(cell.data());
             $('#bubbleEditor').css({
                 top: e.pageY + 10,
                 left: e.pageX + 10
             }).show().data('cell', cell).data('column', cell.index().column);
+
+            if (columnName === 'start_date') {
+                $('#bubbleInput').datepicker({
+                    dateFormat: 'yy-mm-dd',
+                    onClose: function() {
+                        $('#bubbleInput').blur();
+                    }
+                }).datepicker('show');
+            } else {
+                $('#bubbleInput').datepicker('destroy');
+            }
+
             e.stopPropagation();
         });
 
@@ -207,9 +225,23 @@
             var rowData = table.row(cell.index().row).data();
             var columnIdx = cell.index().column;
             var columnName = table.settings().init().columns[columnIdx].data;
-            var input = $('<input type="text" class="form-control" value="' + originalData + '"/>');
+            var input;
+            if (columnName === 'start_date') {
+                input = $('<input type="text" class="form-control" value="' + originalData + '" />');
+            } else {
+                input = $('<input type="text" class="form-control" value="' + originalData + '" />');
+            }
             $(this).html(input);
             input.focus();
+
+            if (columnName === 'start_date') {
+                input.datepicker({
+                    dateFormat: 'yy-mm-dd',
+                    onClose: function() {
+                        input.blur();
+                    }
+                }).datepicker('show');
+            }
 
             input.blur(function() {
                 var newValue = this.value;
