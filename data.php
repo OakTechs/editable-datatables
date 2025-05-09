@@ -16,7 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = intval($_POST['id']);
+    $mode = $_POST['mode'] ?? 'edit';
+    $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
     
     if (isset($_POST['first_name']) && isset($_POST['last_name']) && isset($_POST['position']) && isset($_POST['office']) && isset($_POST['start_date']) && isset($_POST['salary'])) {
         // Full row edit
@@ -27,7 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $start_date = $mysqli->real_escape_string($_POST['start_date']);
         $salary = $mysqli->real_escape_string($_POST['salary']);
 
-        if ($id > 0) {
+        if ($mode === 'add') {
+            // Insert new record
+            $mysqli->query("INSERT INTO employees (first_name, last_name, position, office, start_date, salary) 
+                VALUES ('$first_name', '$last_name', '$position', '$office', '$start_date', '$salary')");
+        } else {
             $mysqli->query("UPDATE employees SET 
                 first_name='$first_name', 
                 last_name='$last_name', 
@@ -37,10 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 salary='$salary' 
                 WHERE id=$id
             ");
-        } else {
-            $mysqli->query("INSERT INTO employees (first_name, last_name, position, office, start_date, salary) 
-                VALUES ('$first_name', '$last_name', '$position', '$office', '$start_date', '$salary')");
-        }
+        } 
+        echo json_encode(["success" => true]);
     } else {
         // Bubble editing (single field)
         foreach ($_POST as $column => $value) {

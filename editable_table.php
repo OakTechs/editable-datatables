@@ -35,6 +35,7 @@
         <button id="fullRowBtn" class="btn btn-primary btn-sm">Full Row Editing</button>
         <button id="bubbleBtn" class="btn btn-success btn-sm">Bubble Editing</button>
         <button id="inlineBtn" class="btn btn-warning btn-sm">Inline Editing</button>
+        <button id="addBtn" class="btn btn-info btn-sm">Add</button>
     </div>
 
     <table id="example" class="display nowrap" style="width:100%">
@@ -72,8 +73,13 @@
               </div>
               <div class="mb-3">
                 <label>Position</label>
-                <input type="text" class="form-control" id="position">
-              </div>
+                <select class="form-control" id="position">
+                    <option value="Software Developer">Software Developer</option>
+                    <option value="Seltos">Seltos</option>
+                    <option value="Data Analyst">Data Analyst</option>
+                    <option value="IT">IT</option>
+                </select>
+               </div>
               <div class="mb-3">
                 <label>Office</label>
                 <input type="text" class="form-control" id="office">
@@ -142,6 +148,7 @@
         });
 
         $('#saveBtn').click(function() {
+            var mode = $(this).data('mode') || 'edit';
             var idx = $('#rowIndex').val();
             var rowData = {
                 id: table.row(idx).data().id,
@@ -153,6 +160,11 @@
                 salary: $('#salary').val()
             };
 
+            if (mode === 'edit') {
+                rowData.id = table.row(idx).data().id;
+            }
+
+            rowData.mode = mode;
             $.post('data.php', rowData, function(response) {
                 if (response.success) {
                     table.ajax.reload(null, false);
@@ -163,13 +175,36 @@
             editModal.hide();
         });
 
+        // Add Button Click
+        $('#addBtn').click(function () {
+            $('#editForm')[0].reset(); // Clear form
+            $('#rowIndex').val(''); // Clear row index
+            $('#editModal .modal-title').text('Add New Record');
+            $('#saveBtn').data('mode', 'add');
+            new bootstrap.Modal(document.getElementById('editModal')).show();
+        });
+
+
         // Bubble Editing
         $('#example tbody').on('click', 'td', function(e) {
             if (currentEditMode !== 'bubble') return;
             var cell = table.cell(this);
             var columnIdx = cell.index().column;
             var columnName = table.settings().init().columns[columnIdx].data;
-            $('#bubbleInput').val(cell.data());
+            var inputField;
+            if (columnName === 'position') {
+                inputField = $('<select class="form-control mb-2" id="bubbleInput">\
+                    <option value="Software Developer">Software Developer</option>\
+                    <option value="Seltos">Seltos</option>\
+                    <option value="Data Analyst">Data Analyst</option>\
+                    <option value="IT">IT</option>\
+                </select>');
+                inputField.val(cell.data());
+            } else {
+                inputField = $('<input type="text" class="form-control mb-2" id="bubbleInput">').val(cell.data());
+            }
+            $('#bubbleEditor').html('').append(inputField).append('<button id="bubbleSaveBtn" class="btn btn-sm btn-success">Save</button>');
+
             $('#bubbleEditor').css({
                 top: e.pageY + 10,
                 left: e.pageX + 10
@@ -226,7 +261,15 @@
             var columnIdx = cell.index().column;
             var columnName = table.settings().init().columns[columnIdx].data;
             var input;
-            if (columnName === 'start_date') {
+            if (columnName === 'position') {
+                input = $('<select class="form-control">\
+                    <option value="Software Developer">Software Developer</option>\
+                    <option value="Seltos">Seltos</option>\
+                    <option value="Data Analyst">Data Analyst</option>\
+                    <option value="IT">IT</option>\
+                </select>');
+                input.val(originalData);
+            } else if (columnName === 'start_date') {
                 input = $('<input type="text" class="form-control" value="' + originalData + '" />');
             } else {
                 input = $('<input type="text" class="form-control" value="' + originalData + '" />');
@@ -237,6 +280,10 @@
             if (columnName === 'start_date') {
                 input.datepicker({
                     dateFormat: 'yy-mm-dd',
+                    onSelect: function (dateText) {
+                        input.val(dateText);
+                        input.data('selected-date', dateText);
+                    },
                     onClose: function() {
                         input.blur();
                     }
@@ -244,7 +291,7 @@
             }
 
             input.blur(function() {
-                var newValue = this.value;
+                var newValue = columnName === 'start_date' ? (input.data('selected-date') || input.val()) : input.val();
                 var postData = {
                     id: rowData.id
                 };
