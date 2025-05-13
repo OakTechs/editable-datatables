@@ -7,7 +7,7 @@ if ($mysqli->connect_errno) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $result = $mysqli->query("SELECT * FROM employees");
+    $result = $mysqli->query("SELECT * FROM employees where is_deleted = 0");
     $data = [];
     while ($row = $result->fetch_assoc()) {
         $data[] = $row;
@@ -18,6 +18,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mode = $_POST['mode'] ?? 'edit';
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+
+    if ($mode === 'delete') {
+        if ($id > 0) {
+            $mysqli->query("UPDATE employees SET is_deleted = 1 WHERE id = $id");
+            echo json_encode(["success" => true]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Invalid ID for delete."]);
+        }
+        exit;
+    }
     
     if (isset($_POST['first_name']) && isset($_POST['last_name']) && isset($_POST['position']) && isset($_POST['office']) && isset($_POST['start_date']) && isset($_POST['salary'])) {
         // Full row edit

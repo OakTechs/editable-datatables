@@ -36,6 +36,7 @@
         <button id="bubbleBtn" class="btn btn-success btn-sm">Bubble Editing</button>
         <button id="inlineBtn" class="btn btn-warning btn-sm">Inline Editing</button>
         <button id="addBtn" class="btn btn-info btn-sm">Add</button>
+        <button id="deleteBtn" class="btn btn-danger btn-sm">Delete</button>
     </div>
 
     <table id="example" class="display nowrap" style="width:100%">
@@ -109,6 +110,7 @@
 
     <script>
     $(document).ready(function() {
+        var selectedRow;
         var table = $('#example').DataTable({
             ajax: {
               url: 'data.php',
@@ -125,6 +127,37 @@
                 { data: 'salary' }
             ]
         });
+
+        $('#example tbody').on('click', 'tr', function () {
+            if ($(this).hasClass('selected')) {
+                $(this).removeClass('selected');
+                selectedRow = null;
+            } else {
+                table.$('tr.selected').removeClass('selected');
+                $(this).addClass('selected');
+                selectedRow = table.row(this);
+            }
+        });
+
+        $('#deleteBtn').click(function () {
+        if (!selectedRow) {
+            alert('Please select a row to delete.');
+            return;
+        }
+
+        var rowData = selectedRow.data();
+        if (confirm('Are you sure you want to delete this record?')) {
+            $.post('data.php', { id: rowData.id, mode: 'delete' }, function (response) {
+                if (response.success) {
+                    table.ajax.reload(null, false);
+                    selectedRow = null;
+                } else {
+                    alert('Failed to delete the record.');
+                }
+            }, 'json');
+        }
+    });
+
 
         var currentEditMode = '';
 
