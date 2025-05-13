@@ -124,7 +124,20 @@
                 { data: 'position' },
                 { data: 'office' },
                 { data: 'start_date' },
-                { data: 'salary' }
+                { data: 'salary',
+                    render: function (data, type, row) {
+                        let cleaned = (data + '').replace(/,/g, '');
+                        let number = parseFloat(cleaned);
+                        if (type === 'display' || type === 'filter') {
+                            return new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD',
+                                minimumFractionDigits: 2
+                            }).format(isNaN(number) ? 0 : number);
+                        }
+                    return data;
+                    }
+                }
             ]
         });
 
