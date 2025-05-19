@@ -30,6 +30,7 @@ It supports adding new records, deleting existing ones, and defining various inp
 ```bash
 git clone https://github.com/your-username/poc-editable-datatable.git
 cd poc-editable-datatable
+```
 
 ### 2. Create MySQL Database & Table
 
