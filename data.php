@@ -54,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
         } 
         echo json_encode(["success" => true]);
+        exit;
     } else {
         // Bubble editing (single field)
         foreach ($_POST as $column => $value) {
@@ -66,5 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     echo json_encode(["success" => true]);
+    exit;
 }
 ?>

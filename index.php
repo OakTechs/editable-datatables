@@ -1,81 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Tabulator Editable Table Example</title>
-  <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    h2 {
-      margin-bottom: 20px;
-    }
-  </style>
-</head>
-<body>
+    <meta charset="UTF-8">
+    <title>DataTable Full Row, Bubble, and Inline Editing</title>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- DataTables CSS + JS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <!-- Bootstrap CSS + JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery UI CSS + JS -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 
-  <h2>Employee List (Editable)</h2>
-  <div id="example-table"></div>
-
-  <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
-  <script>
-    // Sample data
-    var tableData = [
-      { id: 1, name: "John Doe", position: "Developer", start_date: "2024-01-15" },
-      { id: 2, name: "Jane Smith", position: "Analyst", start_date: "2023-09-10" },
-      { id: 3, name: "Sam Lee", position: "Manager", start_date: "2022-05-20" }
-    ];
-
-    // Initialize Tabulator
-    var table = new Tabulator("#example-table", {
-      height: "300px",
-      layout: "fitColumns",
-      data: tableData,
-      columns: [
-        { title: "ID", field: "id", width: 50, hozAlign: "center" },
-        { title: "Name", field: "name", editor: "input" },
-        {
-          title: "Position",
-          field: "position",
-          editor: "select",
-          editorParams: {
-            values: ["Developer", "Manager", "Analyst", "IT Support"]
-          }
-        },
-        {
-          title: "Start Date",
-          field: "start_date",
-          editor: "input",
-          editorParams: {
-            elementAttributes: {
-              type: "date" // Native date picker
-            }
-          }
+    <style>
+        #bubbleEditor {
+            display: none;
+            position: absolute;
+            background: white;
+            padding: 10px;
+            border: 1px solid black;
+            z-index: 1000;
         }
-      ],
-      cellEdited: function(cell) {
-        // Called whenever a cell is edited
-        var updatedRow = cell.getRow().getData();
-        console.log("Updated row data:", updatedRow);
+        .edit-buttons {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body class="p-4">
 
-        // You can send updatedRow to your backend like this:
-        /*
-        fetch("update.php", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(updatedRow)
-        }).then(res => res.json())
-          .then(response => {
-            console.log("Saved successfully", response);
-          });
-        */
+    <!-- Buttons -->
+      <div class="edit-buttons">
+        <button class="btn btn-primary btn-sm edit-mode-btn" data-mode="row">Full Row Editing</button>
+        <button class="btn btn-success btn-sm edit-mode-btn" data-mode="bubble">Bubble Editing</button>
+        <button class="btn btn-warning btn-sm edit-mode-btn" data-mode="inline">Inline Editing</button>
+        <button id="addBtn" class="btn btn-info btn-sm">Add</button>
+        <button id="deleteBtn" class="btn btn-danger btn-sm">Delete</button>
+      </div>
+
+      <!-- Table -->
+      <table id="myTable" class="display" width="100%">
+        <thead>
+          <tr>
+            <th>Id</th>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>Position</th>
+            <th>Office</th>
+            <th>Start date</th>
+            <th>Salary</th>
+          </tr>
+        </thead>
+      </table>
+
+<!-- Modal for full row editing -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Record</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editForm">
+          <input type="hidden" id="rowIndex">
+          <div class="mb-3"><label>First name</label><input type="text" class="form-control" id="first_name"></div>
+          <div class="mb-3"><label>Last name</label><input type="text" class="form-control" id="last_name"></div>
+          <div class="mb-3"><label>Position</label>
+            <select class="form-control" id="position">
+              <option value="Software Developer">Software Developer</option>
+              <option value="Seltos">Seltos</option>
+              <option value="Data Analyst">Data Analyst</option>
+              <option value="IT">IT</option>
+            </select>
+          </div>
+          <div class="mb-3"><label>Office</label><input type="text" class="form-control" id="office"></div>
+          <div class="mb-3"><label>Start date</label><input type="date" class="form-control" id="start_date"></div>
+          <div class="mb-3"><label>Salary</label><input type="text" class="form-control" id="salary"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="saveBtn" class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="editableTable.js"></script>
+<script>
+$(document).ready(function() {
+  $('#myTable').makeEditableTable({
+    dataUrl: 'data.php',
+    columns: [
+      { data: 'id' },
+      { data: 'first_name', editType: 'text' },
+      { data: 'last_name', editType: 'text' },
+      { data: 'position', editType: 'select', options: ['Software Developer', 'Seltos', 'Data Analyst', 'IT'] },
+      { data: 'office', editType: 'text' },
+      { data: 'start_date', editType: 'date' },
+      {
+        data: 'salary',
+        editType: 'text',
+        render: function(data, type, row) {
+          let cleaned = (data + '').replace(/,/g, '');
+          let number = parseFloat(cleaned);
+          if (type === 'display' || type === 'filter') {
+            return new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 2
+            }).format(isNaN(number) ? 0 : number);
+          }
+          return data;
+        }
       }
-    });
-  </script>
+    ]
+
+  });
+
+  $('#addBtn').click(function () {
+    $('#editForm')[0].reset();
+    $('#rowIndex').val('');
+    $('#editModal .modal-title').text('Add New Record');
+    $('#saveBtn').data('mode', 'add');
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+  });
+});
+</script>
+
 
 </body>
 </html>
