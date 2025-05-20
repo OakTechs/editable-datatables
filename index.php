@@ -14,20 +14,7 @@
     <!-- jQuery UI CSS + JS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-
-    <style>
-        #bubbleEditor {
-            display: none;
-            position: absolute;
-            background: white;
-            padding: 10px;
-            border: 1px solid black;
-            z-index: 1000;
-        }
-        .edit-buttons {
-            margin-bottom: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="p-4">
 
@@ -55,7 +42,8 @@ $(document).ready(function() {
   $('#myTable').makeEditableTable({
     dataUrl: 'data.php',
     editableModes: ['inline', 'bubble', 'row'],
-    
+    enableAdd: true, // New option to control Add button
+    enableDelete: true, // New option to control Delete button
     columns: [
       {
         data: null,
@@ -66,39 +54,17 @@ $(document).ready(function() {
           return `<input type="checkbox" class="row-select" data-id="${row.id}">`;
         }
       },
-      { data: 'id' },
+      { data: 'id' , editType: 'number'},
       { data: 'first_name', editType: 'text' },
       { data: 'last_name', editType: 'text' },
       { data: 'position', editType: 'select', options: ['Software Developer', 'Seltos', 'Data Analyst', 'IT'] },
       { data: 'office', editType: 'text' },
       { data: 'start_date', editType: 'date' },
-      {
-        data: 'salary',
-        editType: 'text',
-        render: function(data, type, row) {
-          let cleaned = (data + '').replace(/,/g, '');
-          let number = parseFloat(cleaned);
-          if (type === 'display' || type === 'filter') {
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 2
-            }).format(isNaN(number) ? 0 : number);
-          }
-          return data;
-        }
-      }
+      {data: 'salary', editType: 'number'}
     ]
 
   });
 
-  $('#addBtn').click(function () {
-    $('#editForm')[0].reset();
-    $('#rowIndex').val('');
-    $('#editModal .modal-title').text('Add New Record');
-    $('#saveBtn').data('mode', 'add');
-    new bootstrap.Modal(document.getElementById('editModal')).show();
-  });
 });
 </script>
 
