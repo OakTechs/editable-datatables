@@ -10,7 +10,7 @@ A **jQuery plugin** to create editable DataTables with **inline**, **bubble**, a
 - ➕ **Add & Delete Records**: Manage records via modals and checkboxes.
 - 🛠️ **Customizable Columns**: Supports `text`, `date`, and `select` input types.
 - ☑️ **Checkbox Selection**: Bulk-select rows for deletion.
-- 💲 **Currency Formatting**: Format salary fields as currency.
+- 💲 **Number Formatting**: Supports number formatting for fields like salary or quantity.
 - 🆓 **Open Source**: MIT License – free to use and modify.
 
 ---
