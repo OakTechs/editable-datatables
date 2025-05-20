@@ -3,8 +3,41 @@
     const settings = $.extend({
       dataUrl: 'data.php',
       editableModes: ['row', 'bubble', 'inline'],
+      enableAdd: true, // New option to control Add button
+      enableDelete: true, // New option to control Delete button
       columns: [],
     }, options);
+
+            // Create buttons dynamically before initializing DataTable
+        const $buttonContainer = $('<div class="edit-buttons"></div>');
+        const buttonConfigs = [
+            { mode: 'row', text: 'Full Row Editing', class: 'btn-primary' },
+            { mode: 'bubble', text: 'Bubble Editing', class: 'btn-success' },
+            { mode: 'inline', text: 'Inline Editing', class: 'btn-warning' }
+        ];
+
+        // Add edit mode buttons based on editableModes
+        buttonConfigs.forEach(config => {
+            if (settings.editableModes.includes(config.mode)) {
+                const $button = $(`<button class="btn btn-sm ${config.class} edit-mode-btn" data-mode="${config.mode}">${config.text}</button>`);
+                $buttonContainer.append($button);
+            }
+        });
+
+        // Add 'Add' button if enabled
+        if (settings.enableAdd) {
+            const $addBtn = $('<button id="addBtn" class="btn btn-info btn-sm">Add</button>');
+            $buttonContainer.append($addBtn);
+        }
+
+        // Add 'Delete' button if enabled
+        if (settings.enableDelete) {
+            const $deleteBtn = $('<button id="deleteBtn" class="btn btn-danger btn-sm">Delete</button>');
+            $buttonContainer.append($deleteBtn);
+        }
+
+        // Insert buttons directly into the body, before the table
+        $('body').prepend($buttonContainer);
 
     const table = this.DataTable({
       ajax: {
@@ -16,21 +49,78 @@
     });
 
     let selectedRow = null;
-    let currentEditMode = '';
+    let currentEditMode = settings.editableModes.length === 1 ? settings.editableModes[0] : '';
 
     const $bubbleEditor = $('<div id="bubbleEditor" style="display:none; position:absolute; background:white; padding:10px; border:1px solid black; z-index:1000;"></div>');
     $('body').append($bubbleEditor);
 
+    // Create modal dynamically
+        const $modal = $(`
+            <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Record</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="editForm">
+                                <!-- Form fields will be dynamically generated -->
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" id="saveBtn" class="btn btn-primary">Save changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+        $('body').append($modal);
+
+    // Dynamically generate modal form fields based on columns
+        function generateModalForm() {
+            const $form = $('#editForm').empty(); // Clear existing form content
+            $form.append('<input type="hidden" id="rowIndex">'); // Hidden input for row ID
+
+            settings.columns.forEach((col, index) => {
+                if (col.data && col.editType && col.data !== 'id') { // Skip non-editable columns and ID
+                    const label = col.data.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                    const $formGroup = $('<div class="mb-3"></div>');
+                    $formGroup.append(`<label>${label}</label>`);
+
+                    let input;
+                    if (col.editType === 'select' && Array.isArray(col.options)) {
+                        input = $(`<select class="form-control" id="${col.data}"></select>`);
+                        col.options.forEach(opt => input.append(`<option value="${opt}">${opt}</option>`));
+                    } else if (col.editType === 'date') {
+                        input = $(`<input type="date" class="form-control" id="${col.data}">`);
+                    } else {
+                        input = $(`<input type="text" class="form-control" id="${col.data}">`);
+                    }
+
+                    $formGroup.append(input);
+                    $form.append($formGroup);
+                }
+            });
+        }
+
+        // Initialize modal form on table creation
+        if (settings.editableModes.includes('row') || settings.enableAdd) {
+            generateModalForm();
+        }
+
     // Button Event Binding
     $(document).on('click', '.edit-mode-btn', function() {
-      currentEditMode = $(this).data('mode');
+      if (settings.editableModes.includes($(this).data('mode'))) {
+        currentEditMode = $(this).data('mode');
+      }
     });
 
     // Row Select
     this.on('click', 'tbody tr', function() {
       if (currentEditMode === 'row') {
         const rowData = table.row(this).data();
-        const sortingValue = $(this).find('td.sorting_1').text();
+        const sortingValue = rowData.id;
         console.log("hidden id:", sortingValue);
         showModal(rowData, sortingValue);
       } else {
@@ -46,6 +136,7 @@
     });
 
     // Bubble Editing
+  if (settings.editableModes.includes('bubble')) {
     this.on('click', 'tbody td', function(e) {
       if (currentEditMode !== 'bubble') return;
 
@@ -90,8 +181,10 @@
         $bubbleEditor.hide();
       }
     });
+  }
 
     // Inline Editing
+  if (settings.editableModes.includes('inline')) {
     this.on('click', 'tbody td', function () {
         if (currentEditMode !== 'inline') return;
 
@@ -145,37 +238,49 @@
         });
 
     // External API: Delete
-    $(document).on('click', '#deleteBtn', function () {
-      if (!selectedRow) {
-        alert('Please select a row to delete.');
-        return;
-      }
+    if (settings.enableDelete) {
+      $(document).on('click', '#deleteBtn', function () {
+          const selectedIds = [];
 
-      const rowData = selectedRow.data();
-      if (confirm('Are you sure you want to delete this record?')) {
-        $.post(settings.dataUrl, { id: rowData.id, mode: 'delete' }, function (response) {
-          if (response.success) {
-            table.ajax.reload(null, false);
-            selectedRow = null;
-          } else {
-            alert('Failed to delete the record.');
+          $('.row-select:checked').each(function () {
+              selectedIds.push($(this).data('id'));
+          });
+
+          if (selectedIds.length === 0) {
+              alert('Please select at least one record to delete.');
+              return;
           }
-        }, 'json');
-      }
-    });
 
+          if (confirm(`Are you sure you want to delete ${selectedIds.length} selected record(s)?`)) {
+              $.post('data.php', { ids: selectedIds, mode: 'bulk-delete' }, function (response) {
+              if (response.success) {
+                  $('#myTable').DataTable().ajax.reload(null, false);
+              } else {
+                  alert('Failed to delete records.');
+              }
+              }, 'json');
+          }
+      });
+    }
+  }
     // Show modal for full row editing
     function showModal(data, rowIndex) {
         console.log("row index is:", rowIndex);
         $('#rowIndex').val(rowIndex);
         console.log("Hidden input value set to:", $('#rowIndex').val());
+
+        settings.columns.forEach((col) => {
+                if (col.data && col.editType && col.data !== 'id') {
+                    $(`#${col.data}`).val(data[col.data] || '');
+                }
+            });
         // Exclude rowIndex from the loop to prevent overwriting
-        $('#editForm input:not(#rowIndex), #editForm select').each(function() {
-            const id = $(this).attr('id');
-            if (id && data[id] !== undefined) {
-                $(this).val(data[id]);
-            }
-        });
+        // $('#editForm input:not(#rowIndex), #editForm select').each(function() {
+        //     const id = $(this).attr('id');
+        //     if (id && data[id] !== undefined) {
+        //         $(this).val(data[id]);
+        //     }
+        // });
 
         $('#editModal .modal-title').text('Edit Record');
         $('#saveBtn').data('mode', 'edit');
@@ -242,3 +347,10 @@
     return this;
   };
 })(jQuery);
+$(document).on('change', '#selectAll', function () {
+  const checked = $(this).is(':checked');
+  $('.row-select').prop('checked', checked);
+});
+$('#myTable').on('draw.dt', function () {
+  $('#selectAll').prop('checked', false);
+});

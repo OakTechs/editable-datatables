@@ -19,12 +19,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mode = $_POST['mode'] ?? 'edit';
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 
-    if ($mode === 'delete') {
-        if ($id > 0) {
-            $mysqli->query("UPDATE employees SET is_deleted = 1 WHERE id = $id");
+    if ($mode === 'bulk-delete') {
+        $ids = $_POST['ids'] ?? [];
+        if (!empty($ids) && is_array($ids)) {
+            $safe_ids = array_map('intval', $ids);
+            $id_list = implode(',', $safe_ids);
+            $mysqli->query("UPDATE employees SET is_deleted = 1 WHERE id IN ($id_list)");
             echo json_encode(["success" => true]);
         } else {
-            echo json_encode(["success" => false, "message" => "Invalid ID for delete."]);
+            echo json_encode(["success" => false, "message" => "No IDs provided."]);
         }
         exit;
     }

@@ -31,19 +31,11 @@
 </head>
 <body class="p-4">
 
-    <!-- Buttons -->
-      <div class="edit-buttons">
-        <button class="btn btn-primary btn-sm edit-mode-btn" data-mode="row">Full Row Editing</button>
-        <button class="btn btn-success btn-sm edit-mode-btn" data-mode="bubble">Bubble Editing</button>
-        <button class="btn btn-warning btn-sm edit-mode-btn" data-mode="inline">Inline Editing</button>
-        <button id="addBtn" class="btn btn-info btn-sm">Add</button>
-        <button id="deleteBtn" class="btn btn-danger btn-sm">Delete</button>
-      </div>
-
       <!-- Table -->
       <table id="myTable" class="display" width="100%">
         <thead>
           <tr>
+            <th><input type="checkbox" id="selectAll"></th> 
             <th>Id</th>
             <th>First name</th>
             <th>Last name</th>
@@ -55,45 +47,25 @@
         </thead>
       </table>
 
-<!-- Modal for full row editing -->
-<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Edit Record</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form id="editForm">
-          <input type="hidden" id="rowIndex">
-          <div class="mb-3"><label>First name</label><input type="text" class="form-control" id="first_name"></div>
-          <div class="mb-3"><label>Last name</label><input type="text" class="form-control" id="last_name"></div>
-          <div class="mb-3"><label>Position</label>
-            <select class="form-control" id="position">
-              <option value="Software Developer">Software Developer</option>
-              <option value="Seltos">Seltos</option>
-              <option value="Data Analyst">Data Analyst</option>
-              <option value="IT">IT</option>
-            </select>
-          </div>
-          <div class="mb-3"><label>Office</label><input type="text" class="form-control" id="office"></div>
-          <div class="mb-3"><label>Start date</label><input type="date" class="form-control" id="start_date"></div>
-          <div class="mb-3"><label>Salary</label><input type="text" class="form-control" id="salary"></div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="saveBtn" class="btn btn-primary">Save changes</button>
-      </div>
-    </div>
-  </div>
-</div>
+
 
 <script src="editableTable.js"></script>
 <script>
 $(document).ready(function() {
   $('#myTable').makeEditableTable({
     dataUrl: 'data.php',
+    editableModes: ['inline', 'bubble', 'row'],
+    
     columns: [
+      {
+        data: null,
+        orderable: false,
+        className: 'select-checkbox',
+        defaultContent: '',
+        render: function (data, type, row) {
+          return `<input type="checkbox" class="row-select" data-id="${row.id}">`;
+        }
+      },
       { data: 'id' },
       { data: 'first_name', editType: 'text' },
       { data: 'last_name', editType: 'text' },
