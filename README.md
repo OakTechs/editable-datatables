@@ -58,7 +58,7 @@ git clone https://github.com/your-username/editable-datatable.git
 ### 3. Include the Plugin
 
 ```html
-<script src="path/to/editableTable.js"></script>
+<script src="js/editableTable.js"></script>
 ```
 
 ### 4. Backend Setup (e.g. `data.php`)
@@ -93,7 +93,7 @@ Ensure you have a backend endpoint (e.g., `data.php`) that handles:
 ### 2. Add CSS
 
 ```html
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="css/style.css">
 ```
 
 ### 3. Initialize the Plugin
