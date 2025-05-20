@@ -3,12 +3,27 @@
     const settings = $.extend({
       dataUrl: 'data.php',
       editableModes: ['row', 'bubble', 'inline'],
-      enableAdd: true, // New option to control Add button
-      enableDelete: true, // New option to control Delete button
       columns: [],
     }, options);
 
-            // Create buttons dynamically before initializing DataTable
+    // Apply number formatting to columns with editType: 'number'
+    settings.columns.forEach(column => {
+      if (column.editType === 'number') {
+        column.render = function(data, type, row) {
+          if (type === 'display' || type === 'filter') {
+            let cleaned = (data + '').replace(/,/g, '');
+            let number = parseFloat(cleaned);
+            return new Intl.NumberFormat('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            }).format(isNaN(number) ? 0 : number);
+          }
+          return data;
+        };
+      }
+    });
+
+      // Create buttons dynamically before initializing DataTable
         const $buttonContainer = $('<div class="edit-buttons"></div>');
         const buttonConfigs = [
             { mode: 'row', text: 'Full Row Editing', class: 'btn-primary' },
@@ -94,6 +109,8 @@
                         col.options.forEach(opt => input.append(`<option value="${opt}">${opt}</option>`));
                     } else if (col.editType === 'date') {
                         input = $(`<input type="date" class="form-control" id="${col.data}">`);
+                    } else if (col.editType === 'number') {
+                      input = $(`<input type="number" step="0.01" class="form-control" id="${col.data}">`);
                     } else {
                         input = $(`<input type="text" class="form-control" id="${col.data}">`);
                     }
@@ -115,6 +132,16 @@
         currentEditMode = $(this).data('mode');
       }
     });
+
+    if (settings.enableAdd) {
+      $(document).on('click', '#addBtn', function () {
+        $('#editForm')[0].reset();
+        $('#rowIndex').val('');
+        $('#editModal .modal-title').text('Add New Record');
+        $('#saveBtn').data('mode', 'add');
+        new bootstrap.Modal(document.getElementById('editModal')).show();
+      });
+    }
 
     // Row Select
     this.on('click', 'tbody tr', function() {
@@ -252,7 +279,7 @@
           }
 
           if (confirm(`Are you sure you want to delete ${selectedIds.length} selected record(s)?`)) {
-              $.post('data.php', { ids: selectedIds, mode: 'bulk-delete' }, function (response) {
+              $.post(settings.dataUrl, { ids: selectedIds, mode: 'bulk-delete' }, function (response) {
               if (response.success) {
                   $('#myTable').DataTable().ajax.reload(null, false);
               } else {
@@ -274,13 +301,6 @@
                     $(`#${col.data}`).val(data[col.data] || '');
                 }
             });
-        // Exclude rowIndex from the loop to prevent overwriting
-        // $('#editForm input:not(#rowIndex), #editForm select').each(function() {
-        //     const id = $(this).attr('id');
-        //     if (id && data[id] !== undefined) {
-        //         $(this).val(data[id]);
-        //     }
-        // });
 
         $('#editModal .modal-title').text('Edit Record');
         $('#saveBtn').data('mode', 'edit');
@@ -335,7 +355,9 @@
             input.val(value);
         } else if (inputType === 'date') {
             input = $('<input type="date" class="form-control">').val(value);
-        } else {
+        } else if (inputType === 'number') {
+            input = $('<input type="number" step="0.01" class="form-control">').val(value);
+        }else {
             input = $('<input type="text" class="form-control">').val(value);
         }
 

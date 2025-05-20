@@ -1,0 +1,20 @@
+#bubbleEditor {
+    display: none;
+    position: absolute;
+    background: white;
+    padding: 10px;
+    border: 1px solid black;
+    z-index: 1000;
+}
+.edit-buttons {
+    margin-bottom: 10px;
+}
+.edit-mode-btn{
+    margin-right: 4px;
+}
+#addBtn{
+    margin-right: 4px;
+}
+#deleteBtn{
+    margin-right: 4px;
+}
