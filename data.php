@@ -7,7 +7,7 @@ if ($mysqli->connect_errno) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $result = $mysqli->query("SELECT * FROM employees");
+    $result = $mysqli->query("SELECT * FROM employees where is_deleted = 0");
     $data = [];
     while ($row = $result->fetch_assoc()) {
         $data[] = $row;
@@ -18,6 +18,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mode = $_POST['mode'] ?? 'edit';
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+
+    if ($mode === 'bulk-delete') {
+        $ids = $_POST['ids'] ?? [];
+        if (!empty($ids) && is_array($ids)) {
+            $safe_ids = array_map('intval', $ids);
+            $id_list = implode(',', $safe_ids);
+            $mysqli->query("UPDATE employees SET is_deleted = 1 WHERE id IN ($id_list)");
+            echo json_encode(["success" => true]);
+        } else {
+            echo json_encode(["success" => false, "message" => "No IDs provided."]);
+        }
+        exit;
+    }
     
     if (isset($_POST['first_name']) && isset($_POST['last_name']) && isset($_POST['position']) && isset($_POST['office']) && isset($_POST['start_date']) && isset($_POST['salary'])) {
         // Full row edit
@@ -44,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
         } 
         echo json_encode(["success" => true]);
+        exit;
     } else {
         // Bubble editing (single field)
         foreach ($_POST as $column => $value) {
@@ -56,5 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     echo json_encode(["success" => true]);
+    exit;
 }
 ?>

@@ -36,6 +36,7 @@
         <button id="bubbleBtn" class="btn btn-success btn-sm">Bubble Editing</button>
         <button id="inlineBtn" class="btn btn-warning btn-sm">Inline Editing</button>
         <button id="addBtn" class="btn btn-info btn-sm">Add</button>
+        <button id="deleteBtn" class="btn btn-danger btn-sm">Delete</button>
     </div>
 
     <table id="example" class="display nowrap" style="width:100%">
@@ -109,6 +110,7 @@
 
     <script>
     $(document).ready(function() {
+        var selectedRow;
         var table = $('#example').DataTable({
             ajax: {
               url: 'data.php',
@@ -122,9 +124,53 @@
                 { data: 'position' },
                 { data: 'office' },
                 { data: 'start_date' },
-                { data: 'salary' }
+                { data: 'salary',
+                    render: function (data, type, row) {
+                        let cleaned = (data + '').replace(/,/g, '');
+                        let number = parseFloat(cleaned);
+                        if (type === 'display' || type === 'filter') {
+                            return new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD',
+                                minimumFractionDigits: 2
+                            }).format(isNaN(number) ? 0 : number);
+                        }
+                    return data;
+                    }
+                }
             ]
         });
+
+        $('#example tbody').on('click', 'tr', function () {
+            if ($(this).hasClass('selected')) {
+                $(this).removeClass('selected');
+                selectedRow = null;
+            } else {
+                table.$('tr.selected').removeClass('selected');
+                $(this).addClass('selected');
+                selectedRow = table.row(this);
+            }
+        });
+
+        $('#deleteBtn').click(function () {
+        if (!selectedRow) {
+            alert('Please select a row to delete.');
+            return;
+        }
+
+        var rowData = selectedRow.data();
+        if (confirm('Are you sure you want to delete this record?')) {
+            $.post('data.php', { id: rowData.id, mode: 'delete' }, function (response) {
+                if (response.success) {
+                    table.ajax.reload(null, false);
+                    selectedRow = null;
+                } else {
+                    alert('Failed to delete the record.');
+                }
+            }, 'json');
+        }
+    });
+
 
         var currentEditMode = '';
 
@@ -255,63 +301,66 @@
         // Inline Editing
         $('#example tbody').on('click', 'td', function() {
             if (currentEditMode !== 'inline') return;
+
             var cell = table.cell(this);
             var originalData = cell.data();
             var rowData = table.row(cell.index().row).data();
             var columnIdx = cell.index().column;
             var columnName = table.settings().init().columns[columnIdx].data;
-            var input;
+
+            if ($(this).hasClass('editing') || columnName === 'id') return;
+
+            $(this).addClass('editing');
+
+            let editor;
+
             if (columnName === 'position') {
-                input = $('<select class="form-control">\
+                editor = $('<select class="form-control">\
                     <option value="Software Developer">Software Developer</option>\
                     <option value="Seltos">Seltos</option>\
                     <option value="Data Analyst">Data Analyst</option>\
                     <option value="IT">IT</option>\
                 </select>');
-                input.val(originalData);
+                editor.val(originalData);
             } else if (columnName === 'start_date') {
-                input = $('<input type="text" class="form-control" value="' + originalData + '" />');
+                editor = $('<input type="date" class="form-control">').val(originalData);
             } else {
-                input = $('<input type="text" class="form-control" value="' + originalData + '" />');
-            }
-            $(this).html(input);
-            input.focus();
-
-            if (columnName === 'start_date') {
-                input.datepicker({
-                    dateFormat: 'yy-mm-dd',
-                    onSelect: function (dateText) {
-                        input.val(dateText);
-                        input.data('selected-date', dateText);
-                    },
-                    onClose: function() {
-                        input.blur();
-                    }
-                }).datepicker('show');
+                editor = $('<input type="text" class="form-control">').val(originalData);
             }
 
-            input.blur(function() {
-                var newValue = columnName === 'start_date' ? (input.data('selected-date') || input.val()) : input.val();
-                var postData = {
-                    id: rowData.id
-                };
-                postData[columnName] = newValue;
+            $(this).html(editor);
+            editor.focus();
 
-                $.post('data.php', postData, function(response) {
-                    if (response.success) {
-                        cell.data(newValue).draw();
-                    } else {
-                        cell.data(originalData).draw();
-                    }
-                }, 'json');
+            editor.on('blur change', function () {
+                var newValue = editor.val();
+
+                if (newValue !== originalData) {
+                    var postData = {
+                        id: rowData.id
+                    };
+                    postData[columnName] = newValue;
+
+                    $.post('data.php', postData, function (response) {
+                        if (response.success) {
+                            cell.data(newValue).draw();
+                        } else {
+                            cell.data(originalData).draw();
+                        }
+                        $(cell.node()).removeClass('editing');
+                    }, 'json');
+                } else {
+                    cell.data(originalData).draw();
+                    $(cell.node()).removeClass('editing');
+                }
             });
 
-            input.keypress(function(e) {
-                if (e.which == 13) { // Enter key
-                    input.blur();
+            editor.keypress(function (e) {
+                if (e.which === 13) {
+                    editor.blur();
                 }
             });
         });
+
     });
     </script>
 
