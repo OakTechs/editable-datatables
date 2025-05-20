@@ -14,7 +14,7 @@
     <!-- jQuery UI CSS + JS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="p-4">
 
@@ -36,7 +36,7 @@
 
 
 
-<script src="editableTable.js"></script>
+<script src="js/editableTable.js"></script>
 <script>
 $(document).ready(function() {
   $('#myTable').makeEditableTable({
