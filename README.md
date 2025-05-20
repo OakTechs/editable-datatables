@@ -33,7 +33,7 @@ jQuery UI     : v1.13.2+ (for datepicker)
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/editable-datatable.git
+git clone https://github.com/ActiveBeanCounter/editable-datatable.git
 ```
 
 ### 2. Include Dependencies in HTML
