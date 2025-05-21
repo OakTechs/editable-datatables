@@ -151,4 +151,4 @@ $(document).ready(function() {
 
 ## 📄 License
 
-MIT © [Your Name or Organization]
+MIT © [OAKSTREE]

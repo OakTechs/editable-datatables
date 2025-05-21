@@ -13,6 +13,18 @@
           if (type === 'display' || type === 'filter') {
             let cleaned = (data + '').replace(/,/g, '');
             let number = parseFloat(cleaned);
+            if (isNaN(number)) number = 0;
+
+            if (column.format && column.format.currency) {
+              const symbol = column.format.currency;
+              const position = column.format.position || 'prefix';
+              const formattedNumber = new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }).format(number);
+              return position === 'prefix' ? `${symbol}${formattedNumber}` : `${formattedNumber}${symbol}`;
+            }
+            
             return new Intl.NumberFormat('en-US', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
