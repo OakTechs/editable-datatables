@@ -91,6 +91,28 @@
             </div>
         `);
         $('body').append($modal);
+    
+    // Create delete confirmation modal dynamically
+    const $deleteModal = $(`
+      <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+              <h5 class="modal-title">Confirm Deletion</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p id="deleteModalMessage">Are you sure you want to delete <span id="deleteCount"></span> selected record(s)? </p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+    $('body').append($deleteModal);
 
     // Dynamically generate modal form fields based on columns
         function generateModalForm() {
@@ -144,7 +166,10 @@
     }
 
     // Row Select
-    this.on('click', 'tbody tr', function() {
+    this.on('click', 'tbody tr', function(e) {
+      if ($(e.target).is('input.row-select')) {
+        return;
+      }
       if (currentEditMode === 'row') {
         const rowData = table.row(this).data();
         const sortingValue = rowData.id;
@@ -165,16 +190,18 @@
     // Bubble Editing
   if (settings.editableModes.includes('bubble')) {
     this.on('click', 'tbody td', function(e) {
-      if (currentEditMode !== 'bubble') return;
+    if ($(this).hasClass('select-checkbox') || $(e.target).is('input.row-select')) {
+          return;
+    }
+    if (currentEditMode !== 'bubble') return;
 
-      const cell = table.cell(this);
-      const columnIdx = cell.index().column;
-    //   const columnName = table.settings().init().columns[columnIdx].data;
+    const cell = table.cell(this);
+    const columnIdx = cell.index().column;
     const columnDef = settings.columns[columnIdx];
-      const columnName = columnDef.data;
-      const cellValue = cell.data();
+    const columnName = columnDef.data;
+    const cellValue = cell.data();
 
-      const input = createInputElement(columnDef, cellValue, 'bubble');
+    const input = createInputElement(columnDef, cellValue, 'bubble');
 
       $bubbleEditor.html('').append(input).append('<button id="bubbleSaveBtn" class="btn btn-sm btn-success mt-2">Save</button>');
 
@@ -212,7 +239,10 @@
 
     // Inline Editing
   if (settings.editableModes.includes('inline')) {
-    this.on('click', 'tbody td', function () {
+    this.on('click', 'tbody td', function (e) {
+      if ($(this).hasClass('select-checkbox') || $(e.target).is('input.row-select')) {
+          return;
+      }
         if (currentEditMode !== 'inline') return;
 
         const cell = table.cell(this);
@@ -263,33 +293,53 @@
             }
         });
         });
+      }
 
     // External API: Delete
     if (settings.enableDelete) {
-      $(document).on('click', '#deleteBtn', function () {
-          const selectedIds = [];
+      $(document).on('click', '#deleteBtn', function() {
+        const selectedIds = [];
 
-          $('.row-select:checked').each(function () {
-              selectedIds.push($(this).data('id'));
-          });
+        $('.row-select:checked').each(function() {
+          selectedIds.push($(this).data('id'));
+        });
 
-          if (selectedIds.length === 0) {
-              alert('Please select at least one record to delete.');
-              return;
+        if (selectedIds.length === 0) {
+          // Show modal instead of alert
+          $('#deleteModalMessage').text('Please select at least one record to delete.');
+          $('#deleteCount').text('');
+          $('#confirmDeleteBtn').hide();
+          new bootstrap.Modal(document.getElementById('deleteModal')).show();
+          return;
+        }
+
+        // Show confirmation modal
+        $('#deleteModalMessage').text(`Are you sure you want to delete ${selectedIds.length} selected record(s)?`);
+        $('#deleteCount').text(selectedIds.length);
+        $('#confirmDeleteBtn').show();
+        $('#confirmDeleteBtn').data('ids', selectedIds);
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+      });
+
+      // Handle delete confirmation
+      $(document).on('click', '#confirmDeleteBtn', function() {
+        const selectedIds = $(this).data('ids');
+
+        $.post(settings.dataUrl, { ids: selectedIds, mode: 'bulk-delete' }, function(response) {
+          if (response.success) {
+            $('#myTable').DataTable().ajax.reload(null, false);
+          } else {
+            // Show error in modal
+            $('#deleteModalMessage').text('Failed to delete records. Please try again.');
+            $('#deleteCount').text('');
+            $('#confirmDeleteBtn').hide();
           }
+        }, 'json');
 
-          if (confirm(`Are you sure you want to delete ${selectedIds.length} selected record(s)?`)) {
-              $.post(settings.dataUrl, { ids: selectedIds, mode: 'bulk-delete' }, function (response) {
-              if (response.success) {
-                  $('#myTable').DataTable().ajax.reload(null, false);
-              } else {
-                  alert('Failed to delete records.');
-              }
-              }, 'json');
-          }
+        bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
       });
     }
-  }
+
     // Show modal for full row editing
     function showModal(data, rowIndex) {
         console.log("row index is:", rowIndex);
