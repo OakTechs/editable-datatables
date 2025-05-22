@@ -14,7 +14,7 @@
     <!-- jQuery UI CSS + JS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/editableTable.css">
 </head>
 <body class="p-4">
 
@@ -60,7 +60,7 @@ $(document).ready(function() {
       { data: 'position', editType: 'select', options: ['Software Developer', 'Seltos', 'Data Analyst', 'IT'] },
       { data: 'office', editType: 'text' },
       { data: 'start_date', editType: 'date' },
-      {data: 'salary', editType: 'number'}
+      {data: 'salary', editType: 'number',format: { currency: '$', position: 'prefix' }}
     ]
 
   });
