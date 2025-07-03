@@ -133,6 +133,8 @@ $(document).ready(function() {
 
 ## 🛠 Configuration Example
 
+### ✅ Example 1
+
 ```js
 {
   dataUrl: 'data.php',              // AJAX data source
@@ -146,8 +148,36 @@ $(document).ready(function() {
   ]
 }
 ```
+### ✅ Example 2
 
+```js
+{
+  dataUrl: 'data.php',
+  editableModes: ['bubble'],
+  enableAdd: true,
+  enableDelete: true,
+  columns: [
+    { data: 'id', editType: null },
+    { data: 'first_name', editType: 'text', required: true },
+    { data: 'start_date', editType: 'date' },
+    { data: 'position', editType: 'select', 
+      options: [
+          { value: 'id1', label: 'Software Developer' },
+          { value: 'id2', label: 'Frontend Developer' }
+      ] }
+  ]
+}
+```
 ---
+
+## 📜 Changelog
+
+### Version 1.1.0
+- **Default Edit Mode**: Added logic to set inline as the default edit mode if no mode is specified and inline is not already included in editableModes.
+- **Enhanced Select Inputs**: Updated select inputs to support objects with value and label properties for more flexible option definitions, with backward compatibility for simple arrays.
+- **Form Validation**: Added support for required property in column definitions to enforce mandatory fields, with error messages displayed in the modal for invalid submissions.
+- **Editing Restriction**: Restricted editing to columns with defined editType properties to prevent editing non-editable cells.
+
 
 ## 📄 License
 

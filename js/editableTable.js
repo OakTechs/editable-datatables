@@ -1,5 +1,6 @@
 (function($) {
   $.fn.makeEditableTable = function(options) {
+
     const settings = $.extend({
       dataUrl: 'data.php',
       editableModes: ['row', 'bubble', 'inline'],
@@ -78,6 +79,14 @@
     let selectedRow = null;
     let currentEditMode = settings.editableModes.length === 1 ? settings.editableModes[0] : '';
 
+    if (currentEditMode === '') {
+      
+      if (!settings.editableModes.includes('inline')) {
+        settings.editableModes.push('inline');
+      }
+
+      currentEditMode = 'inline';
+    }
     const $bubbleEditor = $('<div id="bubbleEditor" style="display:none; position:absolute; background:white; padding:10px; border:1px solid black; z-index:1000;"></div>');
     $('body').append($bubbleEditor);
 
@@ -139,14 +148,26 @@
 
                     let input;
                     if (col.editType === 'select' && Array.isArray(col.options)) {
-                        input = $(`<select class="form-control" id="${col.data}"></select>`);
-                        col.options.forEach(opt => input.append(`<option value="${opt}">${opt}</option>`));
+                      input = $(`<select class="form-select" id="${col.data}"></select>`);
+                      col.options.forEach(opt => {
+                        // Check if opt is an object with value and label
+                        if (typeof opt === 'object' && opt.value !== undefined && opt.label !== undefined) {
+                          input.append(`<option value="${opt.value}">${opt.label}</option>`);
+                        } else {
+                          // Fallback for simple array of values
+                          input.append(`<option value="${opt}">${opt}</option>`);
+                        }
+                      });
                     } else if (col.editType === 'date') {
                         input = $(`<input type="date" class="form-control" id="${col.data}">`);
                     } else if (col.editType === 'number') {
                       input = $(`<input type="number" step="0.01" class="form-control" id="${col.data}">`);
                     } else {
                         input = $(`<input type="text" class="form-control" id="${col.data}">`);
+                    }
+
+                    if (col.required) {
+                        input.prop('required', true);
                     }
 
                     $formGroup.append(input);
@@ -211,6 +232,7 @@
     const columnIdx = cell.index().column;
     const columnDef = settings.columns[columnIdx];
     const columnName = columnDef.data;
+    if (!columnDef.editType) return;
     const cellValue = cell.data();
 
     const input = createInputElement(columnDef, cellValue, 'bubble');
@@ -263,6 +285,7 @@
         const columnIdx = cell.index().column;
         const columnDef = settings.columns[columnIdx];
         const columnName = columnDef.data;
+        if (!columnDef.editType) return;
 
         if ($(this).hasClass('editing') || columnName === 'id') return;
 
@@ -381,6 +404,29 @@
         rowData[$(this).attr('id')] = $(this).val();
       });
 
+      let isValid = true;
+      const errorMessages = [];
+      settings.columns.forEach((col) => {
+          if (col.required && col.data && col.editType && col.data !== 'id') {
+              const value = rowData[col.data] || '';
+              if (!value || value.trim() === '') {
+                  isValid = false;
+                  const label = col.data.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                  errorMessages.push(`${label} is required.`);
+              }
+          }
+      });
+
+      // Display error messages if validation fails
+      if (!isValid) {
+          // Remove any existing alerts
+          $('#editForm .alert').remove();
+          // Add error message above the form
+          const $alert = $(`<div class="alert alert-danger" role="alert">${errorMessages.join('<br>')}</div>`);
+          $('#editForm').prepend($alert);
+          return; // Prevent form submission
+      }
+
       if (mode === 'edit') {
         if (!id) {
                 console.error('Invalid ID:', id);
@@ -412,9 +458,17 @@
 
         let input;
         if (inputType === 'select' && Array.isArray(columnDef.options)) {
-            input = $('<select class="form-control"></select>');
-            columnDef.options.forEach(opt => input.append(`<option value="${opt}">${opt}</option>`));
-            input.val(value);
+          input = $(`<select class="form-control" id="${columnDef.data}"></select>`);
+          columnDef.options.forEach(opt => {
+            // Check if opt is an object with value and label
+            if (typeof opt === 'object' && opt.value !== undefined && opt.label !== undefined) {
+              input.append(`<option value="${opt.value}">${opt.label}</option>`);
+            } else {
+              // Fallback for simple array of values
+              input.append(`<option value="${opt}">${opt}</option>`);
+            }
+          });
+          input.val(value);
         } else if (inputType === 'date') {
             input = $('<input type="date" class="form-control">').val(value);
         } else if (inputType === 'number') {
