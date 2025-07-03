@@ -157,6 +157,7 @@ $(document).ready(function() {
   enableAdd: true,
   enableDelete: true,
   columns: [
+    { data: 'id', editType: null },
     { data: 'first_name', editType: 'text', required: true },
     { data: 'start_date', editType: 'date' },
     { data: 'position', editType: 'select', 
